@@ -29,6 +29,8 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import static java.lang.Thread.sleep;
+
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
@@ -38,10 +40,15 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import com.qualcomm.robotcore.util.ReadWriteFile;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
 import java.io.File;
+
+import static java.lang.Thread.sleep;
 
 /**
  * This file illustrates the concept of driving a path based on encoder counts.
@@ -133,7 +140,31 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
         back_left.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         back_right.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        imu = hardwareMap.get(BNO055IMU.class, "imu");
+        // Retrieve the IMU from the hardware map
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        // Technically this is the default, however specifying it is clearer
+        parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
+        // Without this, data retrieving from the IMU throws an exception
+        imu.initialize(parameters);
+        telemetry.addData("Mode", "calibrating...");
+        telemetry.update();
 
+        // make sure the imu gyro is calibrated before continuing.
+        while (!imu.isGyroCalibrated())
+        {
+            try {
+                sleep(50);
+                throw new InterruptedException("Exception:Checking if gyro is calibrated.");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            //idle();
+        }
+
+        telemetry.addData("Mode", "waiting for start");
+        telemetry.addData("imu calib status", imu.getCalibrationStatus().toString());
+        telemetry.update();
         // Send telemetry message to indicate successful Encoder reset
         telemetry.addData("Starting at",  "%7d :%7d:%7d:%7d",
                 front_left.getCurrentPosition(),
@@ -150,16 +181,20 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
         encoderDrive(DRIVE_SPEED,  48,  48, 5.0);  // S1: Forward 47 Inches with 5 Sec timeout
         encoderDrive(DRIVE_SPEED,  -40,  -48, 5.0);  // S1: Forward 47 Inches with 5 Sec timeout
 
-        encoderDrive(TURN_SPEED,   15, -15, 4.0);  // S2: Turn Right 12 Inches with 4 Sec timeout
+        encoderDrive(TURN_SPEED,   18, -18, 4.0);  // S2: Turn Right 12 Inches with 4 Sec timeout
         //encoderDrive(DRIVE_SPEED, -24, -24, 4.0);  // S3: Reverse 24 Inches with 4 Sec timeout
 
-
-        //String filename = "SavedHeadings.json";
-        //File file = AppUtil.getInstance().getSettingsFile(filename);
-        //ReadWriteFile.writeFile(file, "Heading=3.14");
-
-        //String t= ReadWriteFile.readFile(file);
-
+        double botHeading = -getAngle();
+        String filename = "SavedHeadings.json";
+        String headingData = "Heading="+botHeading;
+        File file = AppUtil.getInstance().getSettingsFile(filename);
+        ReadWriteFile.writeFile(file, headingData);
+        String readData= ReadWriteFile.readFile(file);
+        double readbotHeading=0;
+        readbotHeading=Double.parseDouble(readData.substring(8));
+        sleep(1000);  // pause to display final telemetry message.
+        telemetry.addData("HeadingReadfromFile is",  "%.3f",readbotHeading);
+        sleep(5000);  // pause to display final telemetry message.
 
         //telemetry.addData("savedfile", t);
         telemetry.update();
@@ -246,7 +281,41 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
             back_right.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             //rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+            
             sleep(250);   // optional pause after each move.
         }
+    }
+    private void resetAngle()
+    {
+        lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
+
+        globalAngle = 0;
+    }
+
+    /**
+     * Get current cumulative angle rotation from last reset.
+     * @return Angle in degrees. + = left, - = right.
+     */
+    private double getAngle()
+    {
+        // We experimentally determined the Z axis is the axis we want to use for heading angle.
+        // We have to process the angle because the imu works in euler angles so the Z axis is
+        // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
+        // 180 degrees. We detect this transition and track the total cumulative angle of rotation.
+
+        Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
+
+        double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
+
+        if (deltaAngle < -3.14)
+            deltaAngle += 6.28;
+        else if (deltaAngle > 3.14)
+            deltaAngle -= 6.28;
+
+        globalAngle += deltaAngle;
+
+        lastAngles = angles;
+
+        return globalAngle;
     }
 }

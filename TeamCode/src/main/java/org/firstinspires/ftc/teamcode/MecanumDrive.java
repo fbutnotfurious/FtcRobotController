@@ -5,6 +5,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.hardware.adafruit.AdafruitBNO055IMU;
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.util.ReadWriteFile;
+
 import static java.lang.Math.sin;
 import static java.lang.Math.cos;
 import static java.lang.Thread.sleep;
@@ -13,8 +15,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
 import static java.lang.Math.pow;
+
+import java.io.File;
+
 /**
  * This is an example minimal implementation of the mecanum drivetrain
  * for demonstration purposes.  Not tested and not guaranteed to be bug free.
@@ -39,6 +45,10 @@ public class MecanumDrive extends OpMode {
     private BNO055IMU imu;
     Orientation lastAngles = new Orientation();
     double globalAngle;
+    String filename = "SavedHeadings.json";
+    File file = AppUtil.getInstance().getSettingsFile(filename);
+    String readData= ReadWriteFile.readFile(file);
+    double readbotHeading=0;
     @Override
     public void init() {
 
@@ -56,14 +66,15 @@ public class MecanumDrive extends OpMode {
         parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
         // Without this, data retrieving from the IMU throws an exception
         imu.initialize(parameters);
-        telemetry.addData("Mode", "calibrating...");
-        telemetry.update();
+        //telemetry.addData("Mode", "calibrating...");
+        //telemetry.update();
 
         // make sure the imu gyro is calibrated before continuing.
-        while (!imu.isGyroCalibrated())
+        /*while (!imu.isGyroCalibrated())
         {
             try {
                 sleep(50);
+                throw new InterruptedException("Exception:Checking if gyro is calibrated.");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -71,7 +82,8 @@ public class MecanumDrive extends OpMode {
         }
 
         telemetry.addData("Mode", "waiting for start");
-        telemetry.addData("imu calib status", imu.getCalibrationStatus().toString());
+        telemetry.addData("imu calib status", imu.getCalibrationStatus().toString());*/
+        readbotHeading=Double.parseDouble(readData.substring(8));
 
         telemetry.update();
     }
@@ -85,7 +97,8 @@ public class MecanumDrive extends OpMode {
         double strafe = Math.pow(gamepad1.left_stick_x,3);
         double twist  = Math.pow(gamepad1.right_stick_x,3) ;
         // Read inverse IMU heading, as the IMU heading is CW positive
-        double botHeading = -getAngle();
+
+        double botHeading = -getAngle() +readbotHeading;
 
        double new_strafe = strafe * cos(botHeading) - drive * sin(botHeading);
        double new_drive  = strafe * sin(botHeading) + drive * cos(botHeading);
