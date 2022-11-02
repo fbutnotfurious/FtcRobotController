@@ -18,6 +18,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
 import static java.lang.Math.pow;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import java.io.File;
 
@@ -42,6 +44,8 @@ public class MecanumDrive extends OpMode {
     private DcMotor front_right = null;
     private DcMotor back_left   = null;
     private DcMotor back_right  = null;
+    private Servo gripperAsServo;
+    private DcMotor motor_lift = null;
     private BNO055IMU imu;
     Orientation lastAngles = new Orientation();
     double globalAngle;
@@ -58,7 +62,8 @@ public class MecanumDrive extends OpMode {
         front_right  = hardwareMap.get(DcMotor.class, "front_right");
         back_left    = hardwareMap.get(DcMotor.class, "back_left");
         back_right   = hardwareMap.get(DcMotor.class, "back_right");
-
+        gripperAsServo = hardwareMap.get(Servo.class, "gripperAsServo");
+        motor_lift   = hardwareMap.get(DcMotor.class, "motor_lift");
         imu = hardwareMap.get(BNO055IMU.class, "imu");
         // Retrieve the IMU from the hardware map
         BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
@@ -85,12 +90,13 @@ public class MecanumDrive extends OpMode {
         telemetry.addData("imu calib status", imu.getCalibrationStatus().toString());*/
         readbotHeading=Double.parseDouble(readData.substring(8));
 
+        motor_lift.setDirection(DcMotorSimple.Direction.REVERSE);
+
         telemetry.update();
     }
 
     @Override
     public void loop() {
-
         // Mecanum drive is controlled with three axes: drive (front-and-back),
         // strafe (left-and-right), and twist (rotating the whole chassis).
         double drive  = -1*(Math.pow(gamepad1.left_stick_y,3));
@@ -154,7 +160,32 @@ public class MecanumDrive extends OpMode {
         front_right.setPower(speeds[1]*0.5);
         back_left.setPower(speeds[2]*0.5);
         back_right.setPower(speeds[3]*0.5);
+        double gripper =0;
+        if (gamepad1.x)
+            gripper =1;
+        else
+            gripper =0;
+        gripperAsServo.setPosition(gripper);
+        boolean motor_lift_button_up;
+        boolean motor_lift_button_down;
 
+
+        motor_lift_button_up = gamepad1.y;
+        motor_lift_button_down = gamepad1.a;
+        if (motor_lift_button_up && !motor_lift_button_down) {
+            motor_lift.setPower(0.65);
+            telemetry.addData("liftup","up");
+        }
+
+        if (motor_lift_button_down && !motor_lift_button_up) {
+            motor_lift.setPower(-0.15);
+            telemetry.addData("liftup","down");
+        }
+
+        if (!motor_lift_button_down && !motor_lift_button_up) {
+            motor_lift.setPower(0);
+            telemetry.addData("liftup", "off");
+        }
         telemetry.addData("Heading is", botHeading);
         telemetry.update();
 
