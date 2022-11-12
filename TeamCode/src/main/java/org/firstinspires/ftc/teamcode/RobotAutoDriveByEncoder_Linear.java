@@ -48,6 +48,13 @@ import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
 import java.io.File;
 
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
+
+import java.util.List;
 import static java.lang.Thread.sleep;
 
 /**
@@ -76,7 +83,7 @@ import static java.lang.Thread.sleep;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@Autonomous(name="Mechanum Robot: Auto Drive By Encoder", group="Robot")
+@Autonomous(name="Autonomous Robot: Auto Drive By Encoder", group="Robot")
 //@Disabled
 public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
 
@@ -91,22 +98,70 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
     private BNO055IMU imu;
     Orientation lastAngles = new Orientation();
     double globalAngle;
-
+    int parkingobject=3;
+    boolean initial_target=false;
     private ElapsedTime     runtime = new ElapsedTime();
-
+    private ElapsedTime     runtimeObject = new ElapsedTime();
     // Calculate the COUNTS_PER_INCH for your specific drive train.
     // Go to your motor vendor website to determine your motor's COUNTS_PER_MOTOR_REV
     // For external drive gearing, set DRIVE_GEAR_REDUCTION as needed.
     // For example, use a value of 2.0 for a 12-tooth spur gear driving a 24-tooth spur gear.
     // This is gearing DOWN for less speed and more torque.
     // For gearing UP, use a gear ratio less than 1.0. Note this will affect the direction of wheel rotation.
-    static final double     COUNTS_PER_MOTOR_REV    = 537.7;//753.2;// Go Bilda Yellow 5203 1440 ;    // eg: TETRIX Motor Encoder
-    static final double     DRIVE_GEAR_REDUCTION    = 1.0 ;     // No External Gearing.
-    static final double     WHEEL_DIAMETER_INCHES   = 3.77953;//4.0 ;     // For figuring circumference
+    static final double     COUNTS_PER_MOTOR_REV    = 537.7;//FIRST MEET //753.2;// Go Bilda Yellow 5203 1440 ;    // eg: TETRIX Motor Encoder
+    //https://www.gobilda.com/content/spec_sheets/5203-2402-0019_spec_sheet.pdf
+    static final double     DRIVE_GEAR_REDUCTION    = 1.0 ;     // Miter gear
+    static final double     WHEEL_DIAMETER_INCHES   = 3.77953;//96 mm converted to inches(96/25.4), 1 inch is 25.4 mm;     // For figuring circumference
+    //https://www.gobilda.com/96mm-mecanum-wheel-set-70a-durometer-bearing-supported-rollers/
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
                                                       (WHEEL_DIAMETER_INCHES * 3.1415);
     static final double     DRIVE_SPEED             = 0.3;
     static final double     TURN_SPEED              = 0.4;
+
+
+    /*
+     * Specify the source for the Tensor Flow Model.
+     * If the TensorFlowLite object model is included in the Robot Controller App as an "asset",
+     * the OpMode must to load it using loadModelFromAsset().  However, if a team generated model
+     * has been downloaded to the Robot Controller's SD FLASH memory, it must to be loaded using loadModelFromFile()
+     * Here we assume it's an Asset.    Also see method initTfod() below .
+     */
+    private static final String TFOD_MODEL_ASSET = "PowerPlay.tflite";
+    // private static final String TFOD_MODEL_FILE  = "/sdcard/FIRST/tflitemodels/CustomTeamModel.tflite";
+
+
+    private static final String[] LABELS = {
+            "1 Bolt",
+            "2 Bulb",
+            "3 Panel"
+    };
+
+    /*
+     * IMPORTANT: You need to obtain your own license key to use Vuforia. The string below with which
+     * 'parameters.vuforiaLicenseKey' is initialized is for illustration only, and will not function.
+     * A Vuforia 'Development' license key, can be obtained free of charge from the Vuforia developer
+     * web site at https://developer.vuforia.com/license-manager.
+     *
+     * Vuforia license keys are always 380 characters long, and look as if they contain mostly
+     * random data. As an example, here is a example of a fragment of a valid key:
+     *      ... yIgIzTqZ4mWjk9wd3cZO9T1axEqzuhxoGlfOOI2dRzKS4T0hQ8kT ...
+     * Once you've obtained a license key, copy the string from the Vuforia web site
+     * and paste it in to your code on the next line, between the double quotes.
+     */
+    private static final String VUFORIA_KEY =
+            "AUMvWrf/////AAABmbeDy0ZG+kA0qWc4y3DbUAYWHr4GbUWvLk218nrKBU9kU/84I5yQOIRnM2sBaHfEOcMg5mv41RlcEDlCq/hXkuTx5Sm3hHFgt4r6aXXJtT3OsHnDpCfQ/2Qxh32ctr5+K+qhXgQKLm7ewXcL1yNfy4hOg7ZzzelLOnNFWryKROrbgwPGyCDbsKmq0PtrFEB79By9XSEXHGt0UlaTYuCmqIqgYI0wWCoKkJwmpOGBpqc0nuFeN7Q2f1fB0cdwfaX3RTEiUJhLjmFfzxpOymsQQcHdsC1J7zNpWf5BkqZXxchFhkSYOM5JlVh0bHscr593OTLUsMUbZo8upiTqHgDYIHiEzAbTLI97y4piEEtqeaYJ";
+
+    /**
+     * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
+     * localization engine.
+     */
+    private VuforiaLocalizer vuforia;
+
+    /**
+     * {@link #tfod} is the variable we will use to store our instance of the TensorFlow Object
+     * Detection engine.
+     */
+    private TFObjectDetector tfod;
 
 
     @Override
@@ -119,8 +174,24 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
         front_right  = hardwareMap.get(DcMotor.class, "front_right");
         back_left    = hardwareMap.get(DcMotor.class, "back_left");
         back_right   = hardwareMap.get(DcMotor.class, "back_right");
+        initVuforia();
+        initTfod();
+        if (tfod != null) {
+            tfod.activate();
 
-        // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
+            // The TensorFlow software will scale the input images from the camera to a lower resolution.
+            // This can result in lower detection accuracy at longer distances (> 55cm or 22").
+            // If your target is at distance greater than 50 cm (20") you can increase the magnification value
+            // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
+            // should be set to the value of the images used to create the TensorFlow Object Detection model
+            // (typically 16/9).
+           // tfod.setZoom(1.4, 16.0/9.0);
+            tfod.setZoom(1.5, 16.0/9.0);
+        }
+
+
+
+                    // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // When run, this OpMode should start both motors driving forward. So adjust these two lines based on your first test drive.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
         /*leftDrive.setDirection(DcMotor.Direction.REVERSE);
@@ -175,30 +246,106 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
+            runtimeObject.reset();
+            while (opModeIsActive()) {
+                while(runtimeObject.seconds()<=5) {
+                    if (tfod != null) {
+                        // getUpdatedRecognitions() will return null if no new information is available since
+                        // the last time that call was made.
+                        List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+                        if (updatedRecognitions != null) {
+                            telemetry.addData("# Objects Detected", updatedRecognitions.size());
 
-        // Step through each leg of the path,
-        // Note: Reverse movement is obtained by setting a negative distance (not speed)
-        encoderDrive(DRIVE_SPEED,  48,  48, 5.0);  // S1: Forward 47 Inches with 5 Sec timeout
-        encoderDrive(DRIVE_SPEED,  -40,  -48, 5.0);  // S1: Forward 47 Inches with 5 Sec timeout
+                            // step through the list of recognitions and display image position/size information for each one
+                            // Note: "Image number" refers to the randomized image orientation/number
+                            for (Recognition recognition : updatedRecognitions) {
+                                if (recognition.getLabel().equals("1 Bolt")) {
+                                    telemetry.addData("Actual ObjectDetected", "Bolt ");
+                                    parkingobject = 1;
+                                    telemetry.update();
+                                    telemetry.update();
+                                } else if (recognition.getLabel().equals("2 Bulb")) {
+                                    telemetry.addData("Actual ObjectDetected", "Bulb ");
+                                    parkingobject = 2;
+                                    telemetry.update();
+                                } else if (recognition.getLabel().equals("3 Panel")) {
+                                    telemetry.addData("Actual ObjectDetected", "Panel");
+                                    parkingobject = 3;
+                                    telemetry.update();
+                                }
+                                double col = (recognition.getLeft() + recognition.getRight()) / 2;
+                                double row = (recognition.getTop() + recognition.getBottom()) / 2;
+                                double width = Math.abs(recognition.getRight() - recognition.getLeft());
+                                double height = Math.abs(recognition.getTop() - recognition.getBottom());
 
-        encoderDrive(TURN_SPEED,   18, -18, 4.0);  // S2: Turn Right 12 Inches with 4 Sec timeout
-        //encoderDrive(DRIVE_SPEED, -24, -24, 4.0);  // S3: Reverse 24 Inches with 4 Sec timeout
+                                telemetry.addData("", " ");
+                                telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
+                                telemetry.addData("- Position (Row/Col)", "%.0f / %.0f", row, col);
+                                telemetry.addData("- Size (Width/Height)", "%.0f / %.0f", width, height);
+                            }
+                            telemetry.update();
+                        }
+                    }
+                }
+/*
+                // Set 1st target in
+                if (initial_target == false) {
+                    telemetry.addData("Set Target on highest target", "Sucess");
+                    encoderDrive(DRIVE_SPEED, 22, 22, 5.0);
+                    encoderDrive(TURN_SPEED, 15, -15, 4.0);
+                    encoderDrive(DRIVE_SPEED, 24, 24, 5.0);
+                    initial_target=true;
+                }*/
 
-        double botHeading = -getAngle();
-        String filename = "SavedHeadings.json";
-        String headingData = "Heading="+botHeading;
-        File file = AppUtil.getInstance().getSettingsFile(filename);
-        ReadWriteFile.writeFile(file, headingData);
-        String readData= ReadWriteFile.readFile(file);
-        double readbotHeading=0;
-        readbotHeading=Double.parseDouble(readData.substring(8));
-        sleep(1000);  // pause to display final telemetry message.
-        telemetry.addData("HeadingReadfromFile is",  "%.3f",readbotHeading);
-        sleep(5000);  // pause to display final telemetry message.
 
-        //telemetry.addData("savedfile", t);
-        telemetry.update();
-        sleep(1000);  // pause to display final telemetry message.
+                if (parkingobject ==1) {
+                        telemetry.addData("parkingobject", "1");
+                        encoderDrive(DRIVE_SPEED,  27,  27, 5.0);
+                        encoderDrive(TURN_SPEED,   -19, 19, 4.0);  // S2: Turn Right 12 Inches with 4 Sec timeout
+                        encoderDrive(DRIVE_SPEED,  24,  24, 5.0);
+                        break;
+                    }
+                    else if (parkingobject ==2) {
+                        telemetry.addData("parkingobject", "2");
+                        encoderDrive(DRIVE_SPEED,  27,  27, 5.0);
+                        break;
+                    }
+                    else if  (parkingobject ==3) {
+                        telemetry.addData("parkingobject", "3");
+                        encoderDrive(DRIVE_SPEED, 27, 27, 5.0);
+                        encoderDrive(TURN_SPEED, 20, -20, 4.0);
+                        encoderDrive(DRIVE_SPEED,  24,  24, 5.0);
+                        break;// S2: Turn Right 12 Inches with 4 Sec timeout
+                        //encoderDrive(DRIVE_SPEED, 27, 24, 5.0);
+
+                    }
+                    telemetry.update();
+                // Step through each leg of the path,
+
+
+            }
+
+
+            // Note: Reverse movement is obtained by setting a negative distance (not speed)
+            //encoderDrive(DRIVE_SPEED,  48,  48, 5.0);  // S1: Forward 47 Inches with 5 Sec timeout
+            //encoderDrive(DRIVE_SPEED,  -40,  -48, 5.0);  // S1: Forward 47 Inches with 5 Sec timeout
+
+            //encoderDrive(TURN_SPEED,   18, -18, 4.0);  // S2: Turn Right 12 Inches with 4 Sec timeout
+            //encoderDrive(DRIVE_SPEED, -24, -24, 4.0);  // S3: Reverse 24 Inches with 4 Sec timeout
+            double botHeading = -getAngle();
+            String filename = "SavedHeadings.json";
+            String headingData = "Heading=" + botHeading;
+            File file = AppUtil.getInstance().getSettingsFile(filename);
+            ReadWriteFile.writeFile(file, headingData);
+            String readData = ReadWriteFile.readFile(file);
+            double readbotHeading = 0;
+            readbotHeading = Double.parseDouble(readData.substring(8));
+            sleep(1000);  // pause to display final telemetry message.
+            telemetry.addData("HeadingReadfromFile is", "%.3f", readbotHeading);
+
+
+            //telemetry.addData("savedfile", t);
+            telemetry.update();
 
     }
 
@@ -281,8 +428,6 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
             back_right.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             //rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-            
-            sleep(250);   // optional pause after each move.
         }
     }
     private void resetAngle()
@@ -317,5 +462,38 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
         lastAngles = angles;
 
         return globalAngle;
+    }
+    /**
+     * Initialize the Vuforia localization engine.
+     */
+    private void initVuforia() {
+        /*
+         * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
+         */
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+
+        //  Instantiate the Vuforia engine
+        vuforia = ClassFactory.getInstance().createVuforia(parameters);
+    }
+
+    /**
+     * Initialize the TensorFlow Object Detection engine.
+     */
+    private void initTfod() {
+        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
+                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        tfodParameters.minResultConfidence = 0.75f;
+        tfodParameters.isModelTensorFlow2 = true;
+        tfodParameters.inputSize = 300;
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+
+        // Use loadModelFromAsset() if the TF Model is built in as an asset by Android Studio
+        // Use loadModelFromFile() if you have downloaded a custom team model to the Robot Controller's FLASH.
+        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABELS);
+        // tfod.loadModelFromFile(TFOD_MODEL_FILE, LABELS);
     }
 }

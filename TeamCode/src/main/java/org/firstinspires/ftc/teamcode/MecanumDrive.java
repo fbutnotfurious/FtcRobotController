@@ -53,6 +53,7 @@ public class MecanumDrive extends OpMode {
     File file = AppUtil.getInstance().getSettingsFile(filename);
     String readData= ReadWriteFile.readFile(file);
     double readbotHeading=0;
+    private double gripper =0;
     @Override
     public void init() {
 
@@ -82,7 +83,7 @@ public class MecanumDrive extends OpMode {
                 throw new InterruptedException("Exception:Checking if gyro is calibrated.");
             } catch (InterruptedException e) {
                 e.printStackTrace();
-            }
+            }=
             //idle();
         }
 
@@ -156,15 +157,15 @@ public class MecanumDrive extends OpMode {
         }
 
         // apply the calculated values to the motors.
-        front_left.setPower(speeds[0]*0.5);
-        front_right.setPower(speeds[1]*0.5);
-        back_left.setPower(speeds[2]*0.5);
-        back_right.setPower(speeds[3]*0.5);
-        double gripper =0;
+        front_left.setPower(speeds[0]*0.3);// previous 0.5
+        front_right.setPower(speeds[1]*0.3);
+        back_left.setPower(speeds[2]*0.3);
+        back_right.setPower(speeds[3]*0.3);
+
         if (gamepad1.x)
-            gripper =1;
-        else
             gripper =0;
+        if (gamepad1.b)
+            gripper =1;
         gripperAsServo.setPosition(gripper);
         boolean motor_lift_button_up;
         boolean motor_lift_button_down;
@@ -178,12 +179,12 @@ public class MecanumDrive extends OpMode {
         }
 
         if (motor_lift_button_down && !motor_lift_button_up) {
-            motor_lift.setPower(-0.15);
+            motor_lift.setPower(-0.30);
             telemetry.addData("liftup","down");
         }
 
         if (!motor_lift_button_down && !motor_lift_button_up) {
-            motor_lift.setPower(0);
+            motor_lift.setPower(0.05);
             telemetry.addData("liftup", "off");
         }
         telemetry.addData("Heading is", botHeading);
