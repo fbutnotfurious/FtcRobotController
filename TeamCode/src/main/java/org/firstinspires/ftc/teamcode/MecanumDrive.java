@@ -54,6 +54,11 @@ public class MecanumDrive extends OpMode {
     String readData= ReadWriteFile.readFile(file);
     double readbotHeading=0;
     private double gripper =0;
+    private int x_debounce_counter=0;
+    private int b_debounce_counter=0;
+    private int debouncer_threshold =1;
+    private int liftpos=0;
+    private int UPPER_LIMIT =4200;
     @Override
     public void init() {
 
@@ -92,6 +97,10 @@ public class MecanumDrive extends OpMode {
         readbotHeading=Double.parseDouble(readData.substring(8));
 
         motor_lift.setDirection(DcMotorSimple.Direction.REVERSE);
+
+
+        motor_lift.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motor_lift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         telemetry.update();
     }
@@ -161,21 +170,58 @@ public class MecanumDrive extends OpMode {
         front_right.setPower(speeds[1]*0.3);
         back_left.setPower(speeds[2]*0.3);
         back_right.setPower(speeds[3]*0.3);
+        telemetry.addData("o gripper position %f",gripperAsServo.getPosition());
 
         if (gamepad1.x)
-            gripper =0;
+            x_debounce_counter += 1;
+
+        if (x_debounce_counter>=debouncer_threshold)
+        {
+            gripper = 0.05;
+            //gripperAsServo.getController().pwmEnable();
+            telemetry.addData("Setting gripper position %f",gripper);
+            if (gripperAsServo.getPosition()!=gripper)
+            {
+                gripperAsServo.setPosition(gripper);
+            }
+            else
+                x_debounce_counter = 0;
+            //gripperAsServo.getController().pwmDisable();
+        }
         if (gamepad1.b)
-            gripper =1;
-        gripperAsServo.setPosition(gripper);
+            b_debounce_counter+=1;
+        if (b_debounce_counter>=debouncer_threshold)
+        {
+            gripper = 0.15;
+            //gripperAsServo.getController().pwmEnable();
+            telemetry.addData("Setting gripper position %f",gripper);
+            if (gripperAsServo.getPosition()!=gripper)
+            {
+                gripperAsServo.setPosition(gripper);
+            }
+            else
+                b_debounce_counter=0;
+            //gripperAsServo.getController().pwmDisable();
+        }
+
+
         boolean motor_lift_button_up;
         boolean motor_lift_button_down;
 
 
         motor_lift_button_up = gamepad1.y;
         motor_lift_button_down = gamepad1.a;
-        if (motor_lift_button_up && !motor_lift_button_down) {
-            motor_lift.setPower(0.65);
-            telemetry.addData("liftup","up");
+        telemetry.addData("liftup%f",motor_lift.getController().getMotorCurrentPosition(liftpos));
+        if (motor_lift.getController().getMotorCurrentPosition(liftpos)<UPPER_LIMIT) {
+            if (motor_lift_button_up && !motor_lift_button_down ) {
+                telemetry.addData("inside liftup%f", liftpos);
+                motor_lift.setPower(0.65);
+            }
+        }
+        else
+        {
+            motor_lift.setPower(0);
+
         }
 
         if (motor_lift_button_down && !motor_lift_button_up) {
