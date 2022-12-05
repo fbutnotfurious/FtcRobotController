@@ -5,8 +5,10 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.hardware.adafruit.AdafruitBNO055IMU;
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.ReadWriteFile;
 
+import static java.lang.Math.abs;
 import static java.lang.Math.sin;
 import static java.lang.Math.cos;
 import static java.lang.Thread.sleep;
@@ -59,6 +61,20 @@ public class MecanumDrive extends OpMode {
     private int debouncer_threshold =1;
     private int liftpos=0;
     private int UPPER_LIMIT =4200;
+    private double drive_input=0;
+
+    private double ms1= 0.1;
+    private double ms2= 0.5;
+    private double ms3= 0.8;
+
+    private double mf1= 0.1;
+    private double mf2= 0.5;
+    private double mf3= 0.8;
+
+    private double power=0.3;
+    static final double     DRIVE_SPEED             = 0.6;
+    static final double     COUNTS_PER_INCH =100;
+    private ElapsedTime runtime = new ElapsedTime();
     @Override
     public void init() {
 
@@ -97,11 +113,13 @@ public class MecanumDrive extends OpMode {
         readbotHeading=Double.parseDouble(readData.substring(8));
 
         motor_lift.setDirection(DcMotorSimple.Direction.REVERSE);
+        motor_lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
 
         motor_lift.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor_lift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
+        motor_lift.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         telemetry.update();
     }
 
@@ -109,15 +127,55 @@ public class MecanumDrive extends OpMode {
     public void loop() {
         // Mecanum drive is controlled with three axes: drive (front-and-back),
         // strafe (left-and-right), and twist (rotating the whole chassis).
-        double drive  = -1*(Math.pow(gamepad1.left_stick_y,3));
-        double strafe = Math.pow(gamepad1.left_stick_x,3);
-        double twist  = Math.pow(gamepad1.right_stick_x,3) ;
+        // 3 variables to smoothen gamepad input
+        if (gamepad1.left_trigger > 0.9) {
+            power = 0.2;
+        } else if (gamepad1.left_trigger > 0.9) {
+            power = 0.3;
+        }/*
+        if (abs(gamepad1.left_stick_y)<0.05)
+        {
+            drive_input = 0;
+        }
+        // if 5 to 20 then slope 1
+        else if (abs(gamepad1.left_stick_y)<0.2)
+        {
+            if (power==0.2)
+                drive_input = gamepad1.left_stick_y * ms1;
+            else
+                drive_input = gamepad1.left_stick_y * mf1;
+        }
+        // if 20 to to60 then slope 2
+        else if (abs(gamepad1.left_stick_y)<0.6)
+        {
+            if (power==0.2)
+                drive_input = gamepad1.left_stick_y * ms2;
+            else
+                drive_input = gamepad1.left_stick_y * mf2;
+        }
+        //if 600 to 90 then slope 3
+        else if (abs(gamepad1.left_stick_y)<0.9)
+        {
+            if (power==0.2)
+                drive_input = gamepad1.left_stick_y * ms3;
+            else
+                drive_input = gamepad1.left_stick_y * mf3;
+        }
+        // if > 90 then flatline
+        else if (abs(gamepad1.left_stick_y)>0.9)
+        {
+            drive_input = 1;
+        }*/
+
+        double drive = -1 * (Math.pow(gamepad1.left_stick_y, 3));
+        double strafe = Math.pow(gamepad1.left_stick_x, 3);
+        double twist = Math.pow(gamepad1.right_stick_x, 3);
         // Read inverse IMU heading, as the IMU heading is CW positive
 
-        double botHeading = -getAngle() +readbotHeading;
+        double botHeading = -getAngle() + readbotHeading;
 
-       double new_strafe = strafe * cos(botHeading) - drive * sin(botHeading);
-       double new_drive  = strafe * sin(botHeading) + drive * cos(botHeading);
+        double new_strafe = strafe * cos(botHeading) - drive * sin(botHeading);
+        double new_drive = strafe * sin(botHeading) + drive * cos(botHeading);
 
         /*
          * If we had a gyro and wanted to do field-oriented control, here
@@ -155,8 +213,8 @@ public class MecanumDrive extends OpMode {
         // Loop through all values in the speeds[] array and find the greatest
         // *magnitude*.  Not the greatest velocity.
         double max = Math.abs(speeds[0]);
-        for(int i = 0; i < speeds.length; i++) {
-            if ( max < Math.abs(speeds[i]) ) max = Math.abs(speeds[i]);
+        for (int i = 0; i < speeds.length; i++) {
+            if (max < Math.abs(speeds[i])) max = Math.abs(speeds[i]);
         }
 
         // If and only if the maximum is outside of the range we want it to be,
@@ -166,44 +224,47 @@ public class MecanumDrive extends OpMode {
         }
 
         // apply the calculated values to the motors.
-        front_left.setPower(speeds[0]*0.3);// previous 0.5
-        front_right.setPower(speeds[1]*0.3);
-        back_left.setPower(speeds[2]*0.3);
-        back_right.setPower(speeds[3]*0.3);
-        telemetry.addData("o gripper position %f",gripperAsServo.getPosition());
+        front_left.setPower(speeds[0] * 0.3);// previous 0.5
+        front_right.setPower(speeds[1] * 0.3);
+        back_left.setPower(speeds[2] * 0.3);
+        back_right.setPower(speeds[3] * 0.3);
+        telemetry.addData("o gripper position %f", gripperAsServo.getPosition());
+        front_left.setPower(speeds[0] * power);// previous 0.5
+        front_right.setPower(speeds[1] * power);
+        back_left.setPower(speeds[2] * power);
+        back_right.setPower(speeds[3] * power);
 
-        if (gamepad1.x)
+        if (gamepad1.x) {
             x_debounce_counter += 1;
 
-        if (x_debounce_counter>=debouncer_threshold)
-        {
-            gripper = 0.05;
-            //gripperAsServo.getController().pwmEnable();
-            telemetry.addData("Setting gripper position %f",gripper);
-            if (gripperAsServo.getPosition()!=gripper)
-            {
-                gripperAsServo.setPosition(gripper);
+            if (x_debounce_counter >= debouncer_threshold) {
+                gripper = 0.05;
+                //gripperAsServo.getController().pwmEnable();
+                telemetry.addData("Setting gripper position %f", gripper);
+                if (gripperAsServo.getPosition() != gripper) {
+                    gripperAsServo.setPosition(gripper);
+                } else
+                    x_debounce_counter = 0;
+                //gripperAsServo.getController().pwmDisable();
             }
-            else
-                x_debounce_counter = 0;
-            //gripperAsServo.getController().pwmDisable();
         }
-        if (gamepad1.b)
-            b_debounce_counter+=1;
-        if (b_debounce_counter>=debouncer_threshold)
-        {
-            gripper = 0.15;
-            //gripperAsServo.getController().pwmEnable();
-            telemetry.addData("Setting gripper position %f",gripper);
-            if (gripperAsServo.getPosition()!=gripper)
-            {
-                gripperAsServo.setPosition(gripper);
+        if (gamepad1.b) {
+            b_debounce_counter += 1;
+            if (b_debounce_counter >= debouncer_threshold) {
+                gripper = 0.15;
+                //gripperAsServo.getController().pwmEnable();
+                telemetry.addData("Setting gripper position %f", gripper);
+                if (gripperAsServo.getPosition() != gripper) {
+                    gripperAsServo.setPosition(gripper);
+                } else
+                    b_debounce_counter = 0;
+                //gripperAsServo.getController().pwmDisable();
             }
-            else
-                b_debounce_counter=0;
-            //gripperAsServo.getController().pwmDisable();
         }
 
+        //gripper = 1;
+        //gripperAsServo.setPosition(gripper);
+        //gripperAsServo.getController();
 
         boolean motor_lift_button_up;
         boolean motor_lift_button_down;
@@ -211,33 +272,25 @@ public class MecanumDrive extends OpMode {
 
         motor_lift_button_up = gamepad1.y;
         motor_lift_button_down = gamepad1.a;
-        telemetry.addData("liftup%f",motor_lift.getController().getMotorCurrentPosition(liftpos));
-        if (motor_lift.getController().getMotorCurrentPosition(liftpos)<UPPER_LIMIT) {
-            if (motor_lift_button_up && !motor_lift_button_down ) {
+        telemetry.addData("liftup%f", motor_lift.getController().getMotorCurrentPosition(liftpos));
+        if (motor_lift.getController().getMotorCurrentPosition(liftpos) < UPPER_LIMIT) {
+            if (motor_lift_button_up && !motor_lift_button_down) {
                 telemetry.addData("inside liftup%f", liftpos);
-                motor_lift.setPower(0.65);
+                motor_lift.setPower(0.55);
+            }
+            if (motor_lift_button_down && !motor_lift_button_up) {
+                motor_lift.setPower(-0.30);
+                telemetry.addData("liftup", "down");
+            } else if (!motor_lift_button_down && !motor_lift_button_up) {
+                motor_lift.setPower(0.0020);
+                telemetry.addData("liftup", "off");
             }
         }
-        else
-        {
-            motor_lift.setPower(0);
+            telemetry.addData("Heading is", botHeading);
+            telemetry.update();
+
 
         }
-
-        if (motor_lift_button_down && !motor_lift_button_up) {
-            motor_lift.setPower(-0.30);
-            telemetry.addData("liftup","down");
-        }
-
-        if (!motor_lift_button_down && !motor_lift_button_up) {
-            motor_lift.setPower(0.05);
-            telemetry.addData("liftup", "off");
-        }
-        telemetry.addData("Heading is", botHeading);
-        telemetry.update();
-
-
-    }
 
     private void resetAngle()
     {
@@ -272,4 +325,47 @@ public class MecanumDrive extends OpMode {
 
         return globalAngle;
     }
-}
+
+    public void encoderDrive(double speed,
+                             double liftInches,
+                             double timeoutS) {
+
+        int newmotor_lift_Target;
+
+        // Ensure that the opmode is still active
+
+        // Determine new target position, and pass to motor controller
+        newmotor_lift_Target = motor_lift.getCurrentPosition() + (int) (liftInches * COUNTS_PER_INCH);
+        motor_lift.setTargetPosition(newmotor_lift_Target);
+
+        // Turn On RUN_TO_POSITION
+        motor_lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        // reset the timeout time and start motion.
+        runtime.reset();
+        motor_lift.setPower(Math.abs(speed));
+
+
+        // keep looping while we are still active, and there is time left, and both motors are running.
+        // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
+        // its target position, the motion will stop.  This is "safer" in the event that the robot will
+        // always end the motion as soon as possible.
+        // However, if you require that BOTH motors have finished their moves before the robot continues
+        // onto the next step, use (isBusy() || isBusy()) in the loop test.
+        while ((runtime.seconds() < timeoutS) &&
+                (motor_lift.isBusy())) {
+
+            // Display it for the driver.
+            telemetry.addData("Running to", " %7d", newmotor_lift_Target);
+            telemetry.addData("Currently at", " at %7d",
+                    motor_lift.getCurrentPosition());
+            telemetry.update();
+        }
+
+        // Stop all motion;
+        motor_lift.setPower(0);
+
+        // Turn off RUN_TO_POSITION
+        motor_lift.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+    }}
