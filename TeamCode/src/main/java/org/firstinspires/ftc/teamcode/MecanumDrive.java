@@ -113,13 +113,13 @@ public class MecanumDrive extends OpMode {
         readbotHeading=Double.parseDouble(readData.substring(8));
 
         motor_lift.setDirection(DcMotorSimple.Direction.REVERSE);
-        motor_lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+       /* motor_lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
 
         motor_lift.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor_lift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        motor_lift.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motor_lift.setMode(DcMotor.RunMode.RUN_USING_ENCODER);*/
         telemetry.update();
     }
 
@@ -273,7 +273,8 @@ public class MecanumDrive extends OpMode {
         motor_lift_button_up = gamepad1.y;
         motor_lift_button_down = gamepad1.a;
         telemetry.addData("liftup%f", motor_lift.getController().getMotorCurrentPosition(liftpos));
-        if (motor_lift.getController().getMotorCurrentPosition(liftpos) < UPPER_LIMIT) {
+        if (1==1){
+        //if (motor_lift.getController().getMotorCurrentPosition(liftpos) < UPPER_LIMIT) {
             if (motor_lift_button_up && !motor_lift_button_down) {
                 telemetry.addData("inside liftup%f", liftpos);
                 motor_lift.setPower(0.55);
@@ -282,7 +283,7 @@ public class MecanumDrive extends OpMode {
                 motor_lift.setPower(-0.30);
                 telemetry.addData("liftup", "down");
             } else if (!motor_lift_button_down && !motor_lift_button_up) {
-                motor_lift.setPower(0.0020);
+                motor_lift.setPower(0.05);
                 telemetry.addData("liftup", "off");
             }
         }

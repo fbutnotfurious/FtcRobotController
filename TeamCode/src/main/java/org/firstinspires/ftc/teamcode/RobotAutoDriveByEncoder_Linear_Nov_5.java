@@ -83,9 +83,9 @@ import static java.lang.Thread.sleep;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@Autonomous(name="Autonomous Robot: Auto Drive By Encoder", group="Robot")
-//@Disabled
-public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
+@Autonomous(name="Nov 5 Autonomous Robot: Auto Drive By Encoder", group="Robot")
+@Disabled
+public class RobotAutoDriveByEncoder_Linear_Nov_5 extends LinearOpMode {
 
     /* Declare OpMode members. */
     //private DcMotor         leftDrive   = null;
@@ -114,8 +114,8 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
     static final double     WHEEL_DIAMETER_INCHES   = 3.77953;//96 mm converted to inches(96/25.4), 1 inch is 25.4 mm;     // For figuring circumference
     //https://www.gobilda.com/96mm-mecanum-wheel-set-70a-durometer-bearing-supported-rollers/
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
-                                                      (WHEEL_DIAMETER_INCHES * 3.1415);
-    static final double     DRIVE_SPEED             = 0.3;// may have to change
+            (WHEEL_DIAMETER_INCHES * 3.1415);
+    static final double     DRIVE_SPEED             = 0.3;
     static final double     TURN_SPEED              = 0.4;
 
 
@@ -168,8 +168,8 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
     public void runOpMode() {
 
         // Initialize the drive system variables.
-       // leftDrive  = hardwareMap.get(DcMotor.class, "left_drive");
-       // rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
+        // leftDrive  = hardwareMap.get(DcMotor.class, "left_drive");
+        // rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
         front_left   = hardwareMap.get(DcMotor.class, "front_left");
         front_right  = hardwareMap.get(DcMotor.class, "front_right");
         back_left    = hardwareMap.get(DcMotor.class, "back_left");
@@ -185,13 +185,12 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
             // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
             // should be set to the value of the images used to create the TensorFlow Object Detection model
             // (typically 16/9).
-           // tfod.setZoom(1.4, 16.0/9.0);
-            tfod.setZoom(1.5, 16.0/9.0);
+            tfod.setZoom(1.4, 16.0/9.0);
         }
 
 
 
-                    // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
+        // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // When run, this OpMode should start both motors driving forward. So adjust these two lines based on your first test drive.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
         /*leftDrive.setDirection(DcMotor.Direction.REVERSE);
@@ -246,59 +245,58 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
-            runtimeObject.reset();
-            while (opModeIsActive())
-            {
-                while(runtimeObject.seconds()<=5) {
-                    if (tfod != null) {
-                        // getUpdatedRecognitions() will return null if no new information is available since
-                        // the last time that call was made.
-                        List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
-                        if (updatedRecognitions != null) {
-                            telemetry.addData("# Objects Detected", updatedRecognitions.size());
+        runtimeObject.reset();
+        while (opModeIsActive()) {
+            while(runtimeObject.seconds()<=5) {
+                if (tfod != null) {
+                    // getUpdatedRecognitions() will return null if no new information is available since
+                    // the last time that call was made.
+                    List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+                    if (updatedRecognitions != null) {
+                        telemetry.addData("# Objects Detected", updatedRecognitions.size());
 
-                            // step through the list of recognitions and display image position/size information for each one
-                            // Note: "Image number" refers to the randomized image orientation/number
-                            for (Recognition recognition : updatedRecognitions) {
-                                if (recognition.getLabel().equals("1 Bolt")) {
-                                    telemetry.addData("Actual ObjectDetected", "Bolt ");
-                                    parkingobject = 1;
-                                    telemetry.update();
-                                    telemetry.update();
-                                } else if (recognition.getLabel().equals("2 Bulb")) {
-                                    telemetry.addData("Actual ObjectDetected", "Bulb ");
-                                    parkingobject = 2;
-                                    telemetry.update();
-                                } else if (recognition.getLabel().equals("3 Panel")) {
-                                    telemetry.addData("Actual ObjectDetected", "Panel");
-                                    parkingobject = 3;
-                                    telemetry.update();
-                                }
-                                double col = (recognition.getLeft() + recognition.getRight()) / 2;
-                                double row = (recognition.getTop() + recognition.getBottom()) / 2;
-                                double width = Math.abs(recognition.getRight() - recognition.getLeft());
-                                double height = Math.abs(recognition.getTop() - recognition.getBottom());
-
-                                telemetry.addData("", " ");
-                                telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
-                                telemetry.addData("- Position (Row/Col)", "%.0f / %.0f", row, col);
-                                telemetry.addData("- Size (Width/Height)", "%.0f / %.0f", width, height);
+                        // step through the list of recognitions and display image position/size information for each one
+                        // Note: "Image number" refers to the randomized image orientation/number
+                        for (Recognition recognition : updatedRecognitions) {
+                            if (recognition.getLabel().equals("1 Bolt")) {
+                                telemetry.addData("Actual ObjectDetected", "Bolt ");
+                                parkingobject = 1;
+                                telemetry.update();
+                                telemetry.update();
+                            } else if (recognition.getLabel().equals("2 Bulb")) {
+                                telemetry.addData("Actual ObjectDetected", "Bulb ");
+                                parkingobject = 2;
+                                telemetry.update();
+                            } else if (recognition.getLabel().equals("3 Panel")) {
+                                telemetry.addData("Actual ObjectDetected", "Panel");
+                                parkingobject = 3;
+                                telemetry.update();
                             }
-                            telemetry.update();
+                            double col = (recognition.getLeft() + recognition.getRight()) / 2;
+                            double row = (recognition.getTop() + recognition.getBottom()) / 2;
+                            double width = Math.abs(recognition.getRight() - recognition.getLeft());
+                            double height = Math.abs(recognition.getTop() - recognition.getBottom());
+
+                            telemetry.addData("", " ");
+                            telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
+                            telemetry.addData("- Position (Row/Col)", "%.0f / %.0f", row, col);
+                            telemetry.addData("- Size (Width/Height)", "%.0f / %.0f", width, height);
                         }
+                        telemetry.update();
                     }
                 }
-/*
-                // Set 1st target in
-                if (initial_target == false) {
-                    telemetry.addData("Set Target on highest target", "Sucess");
-                    encoderDrive(DRIVE_SPEED, 22, 22, 5.0);
-                    encoderDrive(TURN_SPEED, 15, -15, 4.0);
-                    encoderDrive(DRIVE_SPEED, 24, 24, 5.0);
-                    initial_target=true;
-                }*/
+            }
 
+            // Set 1st target in
+            if (initial_target == false) {
+                telemetry.addData("Set Target on highest target", "Sucess");
+                encoderDrive(DRIVE_SPEED, 22, 22, 5.0);
+              //  encoderDrive(TURN_SPEED, 15, -15, 4.0);
+              //  encoderDrive(DRIVE_SPEED, 24, 24, 5.0);
+                initial_target=true;
+            }
 
+                /*
                 if (parkingobject ==1) {
                         telemetry.addData("parkingobject", "1");
                         encoderDrive(DRIVE_SPEED,  27,  27, 5.0);
@@ -312,42 +310,41 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
                         break;
                     }
                     else if  (parkingobject ==3) {
-                       telemetry.addData("parkingobject", "3");
-                       encoderDrive(DRIVE_SPEED, 27, 27, 5.0);
-                       encoderDrive(TURN_SPEED, 20, -20, 4.0);
-                       encoderDrive(DRIVE_SPEED,  24,  24, 5.0);
-                       break;// S2: Turn Right 12 Inches with 4 Sec timeout
+                        telemetry.addData("parkingobject", "3");
+                        encoderDrive(DRIVE_SPEED, 27, 27, 5.0);
+                        encoderDrive(TURN_SPEED, 20, -20, 4.0);
+                        encoderDrive(DRIVE_SPEED,  24,  24, 5.0);
+                        break;// S2: Turn Right 12 Inches with 4 Sec timeout
                         //encoderDrive(DRIVE_SPEED, 27, 24, 5.0);
 
-                    }
-                    telemetry.update();
-                    break;
-                // Step through each leg of the path,
-
-
-            }
-
-
-            // Note: Reverse movement is obtained by setting a negative distance (not speed)
-            //encoderDrive(DRIVE_SPEED,  48,  48, 5.0);  // S1: Forward 47 Inches with 5 Sec timeout
-            //encoderDrive(DRIVE_SPEED,  -40,  -48, 5.0);  // S1: Forward 47 Inches with 5 Sec timeout
-
-            //encoderDrive(TURN_SPEED,   18, -18, 4.0);  // S2: Turn Right 12 Inches with 4 Sec timeout
-            //encoderDrive(DRIVE_SPEED, -24, -24, 4.0);  // S3: Reverse 24 Inches with 4 Sec timeout
-            double botHeading = -getAngle();
-            String filename = "SavedHeadings.json";
-            String headingData = "Heading=" + botHeading;
-            File file = AppUtil.getInstance().getSettingsFile(filename);
-            ReadWriteFile.writeFile(file, headingData);
-            String readData = ReadWriteFile.readFile(file);
-            double readbotHeading = 0;
-            readbotHeading = Double.parseDouble(readData.substring(8));
-            sleep(1000);  // pause to display final telemetry message.
-            telemetry.addData("HeadingReadfromFile is", "%.3f", readbotHeading);
-
-
-            //telemetry.addData("savedfile", t);
+                    }*/
             telemetry.update();
+            // Step through each leg of the path,
+
+
+        }
+
+
+        // Note: Reverse movement is obtained by setting a negative distance (not speed)
+        //encoderDrive(DRIVE_SPEED,  48,  48, 5.0);  // S1: Forward 47 Inches with 5 Sec timeout
+        //encoderDrive(DRIVE_SPEED,  -40,  -48, 5.0);  // S1: Forward 47 Inches with 5 Sec timeout
+
+        //encoderDrive(TURN_SPEED,   18, -18, 4.0);  // S2: Turn Right 12 Inches with 4 Sec timeout
+        //encoderDrive(DRIVE_SPEED, -24, -24, 4.0);  // S3: Reverse 24 Inches with 4 Sec timeout
+        double botHeading = -getAngle();
+        String filename = "SavedHeadings.json";
+        String headingData = "Heading=" + botHeading;
+        File file = AppUtil.getInstance().getSettingsFile(filename);
+        ReadWriteFile.writeFile(file, headingData);
+        String readData = ReadWriteFile.readFile(file);
+        double readbotHeading = 0;
+        readbotHeading = Double.parseDouble(readData.substring(8));
+        sleep(1000);  // pause to display final telemetry message.
+        telemetry.addData("HeadingReadfromFile is", "%.3f", readbotHeading);
+
+
+        //telemetry.addData("savedfile", t);
+        telemetry.update();
 
     }
 
@@ -404,16 +401,16 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
             // However, if you require that BOTH motors have finished their moves before the robot continues
             // onto the next step, use (isBusy() || isBusy()) in the loop test.
             while (opModeIsActive() &&
-                   (runtime.seconds() < timeoutS) &&
-                   (front_left.isBusy() && back_left.isBusy()
-                    && front_right.isBusy() && back_right.isBusy())) {
+                    (runtime.seconds() < timeoutS) &&
+                    (front_left.isBusy() && back_left.isBusy()
+                            && front_right.isBusy() && back_right.isBusy())) {
 
                 // Display it for the driver.
                 telemetry.addData("Running to",  " %7d :%7d", newfront_LeftTarget,
                         newback_LeftTarget, newfront_RightTarget, newback_RightTarget);
                 telemetry.addData("Currently at",  " at %7d :%7d",
-                                            front_left.getCurrentPosition(), back_left.getCurrentPosition(),
-                                            front_right.getCurrentPosition(), back_right.getCurrentPosition());
+                        front_left.getCurrentPosition(), back_left.getCurrentPosition(),
+                        front_right.getCurrentPosition(), back_right.getCurrentPosition());
                 telemetry.update();
             }
 
