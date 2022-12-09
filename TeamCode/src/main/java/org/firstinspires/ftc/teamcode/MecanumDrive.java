@@ -251,7 +251,7 @@ public class MecanumDrive extends OpMode {
         if (gamepad1.b) {
             b_debounce_counter += 1;
             if (b_debounce_counter >= debouncer_threshold) {
-                gripper = 0.15;
+                gripper = 0.23; // extra 0.20
                 //gripperAsServo.getController().pwmEnable();
                 telemetry.addData("Setting gripper position %f", gripper);
                 if (gripperAsServo.getPosition() != gripper) {

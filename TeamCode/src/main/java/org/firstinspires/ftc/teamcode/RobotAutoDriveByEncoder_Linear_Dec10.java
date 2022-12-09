@@ -29,39 +29,34 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import static java.lang.Thread.sleep;
-
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
 import com.qualcomm.robotcore.util.ReadWriteFile;
 
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
-
-import java.io.File;
-
-import org.firstinspires.ftc.robotcore.external.ClassFactory;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
-import java.util.ArrayList;
-import java.util.List;
-import static java.lang.Thread.sleep;
 import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvInternalCamera;
+
+import java.io.File;
+import java.util.List;
+
 /**
  * This file illustrates the concept of driving a path based on encoder counts.
  * The code is structured as a LinearOpMode
@@ -88,30 +83,10 @@ import org.openftc.easyopencv.OpenCvInternalCamera;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@Autonomous(name="Autonomous Robot: Auto Drive By Encoder", group="Robot")
-//@Disabled
-public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
-    OpenCvCamera camera;
-    AprilTagDetectionPipeline aprilTagDetectionPipeline;
-    static final double FEET_PER_METER = 3.28084;
+@Autonomous(name="Dec 10  Autonomous Robot: Auto Drive By Encoder", group="Robot")
+@Disabled
+public class RobotAutoDriveByEncoder_Linear_Dec10 extends LinearOpMode {
 
-    // Lens intrinsics
-    // UNITS ARE PIXELS
-    // NOTE: this calibration is for the C920 webcam at 800x448.
-    // You will need to do your own calibration for other configurations!
-    double fx = 578.272;
-    double fy = 578.272;
-    double cx = 402.145;
-    double cy = 221.506;
-
-    // UNITS ARE METERS
-    double tagsize = 0.166;
-
-    int ID_TAG_OF_INTEREST = 18; // Tag ID 18 from the 36h11 family
-    int LEFT = 1;
-    int MIDDLE = 2;
-    int RIGHT = 3;
-    AprilTagDetection tagOfInterest = null;
     /* Declare OpMode members. */
     //private DcMotor         leftDrive   = null;
     //private DcMotor         rightDrive  = null;
@@ -127,7 +102,6 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
     boolean initial_target=false;
     private ElapsedTime     runtime = new ElapsedTime();
     private ElapsedTime     runtimeObject = new ElapsedTime();
-    private ElapsedTime     runtimeDetect = new ElapsedTime();
     // Calculate the COUNTS_PER_INCH for your specific drive train.
     // Go to your motor vendor website to determine your motor's COUNTS_PER_MOTOR_REV
     // For external drive gearing, set DRIVE_GEAR_REDUCTION as needed.
@@ -140,8 +114,8 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
     static final double     WHEEL_DIAMETER_INCHES   = 3.77953;//96 mm converted to inches(96/25.4), 1 inch is 25.4 mm;     // For figuring circumference
     //https://www.gobilda.com/96mm-mecanum-wheel-set-70a-durometer-bearing-supported-rollers/
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
-                                                      (WHEEL_DIAMETER_INCHES * 3.1415);
-    static final double     DRIVE_SPEED             = 0.3;// may have to change
+            (WHEEL_DIAMETER_INCHES * 3.1415);
+    static final double     DRIVE_SPEED             = 0.3;
     static final double     TURN_SPEED              = 0.4;
 
 
@@ -152,15 +126,15 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
      * has been downloaded to the Robot Controller's SD FLASH memory, it must to be loaded using loadModelFromFile()
      * Here we assume it's an Asset.    Also see method initTfod() below .
      */
-  //  private static final String TFOD_MODEL_ASSET = "PowerPlay.tflite";
+    private static final String TFOD_MODEL_ASSET = "PowerPlay.tflite";
     // private static final String TFOD_MODEL_FILE  = "/sdcard/FIRST/tflitemodels/CustomTeamModel.tflite";
 
 
-  /*  private static final String[] LABELS = {
+    private static final String[] LABELS = {
             "1 Bolt",
             "2 Bulb",
             "3 Panel"
-    };*/
+    };
 
     /*
      * IMPORTANT: You need to obtain your own license key to use Vuforia. The string below with which
@@ -174,62 +148,46 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
      * Once you've obtained a license key, copy the string from the Vuforia web site
      * and paste it in to your code on the next line, between the double quotes.
      */
-  //  private static final String VUFORIA_KEY =
-  //          "AUMvWrf/////AAABmbeDy0ZG+kA0qWc4y3DbUAYWHr4GbUWvLk218nrKBU9kU/84I5yQOIRnM2sBaHfEOcMg5mv41RlcEDlCq/hXkuTx5Sm3hHFgt4r6aXXJtT3OsHnDpCfQ/2Qxh32ctr5+K+qhXgQKLm7ewXcL1yNfy4hOg7ZzzelLOnNFWryKROrbgwPGyCDbsKmq0PtrFEB79By9XSEXHGt0UlaTYuCmqIqgYI0wWCoKkJwmpOGBpqc0nuFeN7Q2f1fB0cdwfaX3RTEiUJhLjmFfzxpOymsQQcHdsC1J7zNpWf5BkqZXxchFhkSYOM5JlVh0bHscr593OTLUsMUbZo8upiTqHgDYIHiEzAbTLI97y4piEEtqeaYJ";
+    private static final String VUFORIA_KEY =
+            "AUMvWrf/////AAABmbeDy0ZG+kA0qWc4y3DbUAYWHr4GbUWvLk218nrKBU9kU/84I5yQOIRnM2sBaHfEOcMg5mv41RlcEDlCq/hXkuTx5Sm3hHFgt4r6aXXJtT3OsHnDpCfQ/2Qxh32ctr5+K+qhXgQKLm7ewXcL1yNfy4hOg7ZzzelLOnNFWryKROrbgwPGyCDbsKmq0PtrFEB79By9XSEXHGt0UlaTYuCmqIqgYI0wWCoKkJwmpOGBpqc0nuFeN7Q2f1fB0cdwfaX3RTEiUJhLjmFfzxpOymsQQcHdsC1J7zNpWf5BkqZXxchFhkSYOM5JlVh0bHscr593OTLUsMUbZo8upiTqHgDYIHiEzAbTLI97y4piEEtqeaYJ";
 
     /**
      * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
      * localization engine.
      */
-    //private VuforiaLocalizer vuforia;
+    private VuforiaLocalizer vuforia;
 
     /**
      * {@link #tfod} is the variable we will use to store our instance of the TensorFlow Object
      * Detection engine.
      */
-    //private TFObjectDetector tfod;
+    private TFObjectDetector tfod;
 
 
     @Override
     public void runOpMode() {
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
-        aprilTagDetectionPipeline = new AprilTagDetectionPipeline(tagsize, fx, fy, cx, cy);
-
-        camera.setPipeline(aprilTagDetectionPipeline);
-        camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
-            @Override
-            public void onOpened() {
-                camera.startStreaming(800, 448, OpenCvCameraRotation.UPRIGHT);
-            }
-
-            @Override
-            public void onError(int errorCode) {
-
-            }
-        });
 
         // Initialize the drive system variables.
         // leftDrive  = hardwareMap.get(DcMotor.class, "left_drive");
         // rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
-        front_left = hardwareMap.get(DcMotor.class, "front_left");
-        front_right = hardwareMap.get(DcMotor.class, "front_right");
-        back_left = hardwareMap.get(DcMotor.class, "back_left");
-        back_right = hardwareMap.get(DcMotor.class, "back_right");
-        //  initVuforia();
-        //  initTfod();
-        //if (tfod != null) {
-        //    tfod.activate();
+        front_left   = hardwareMap.get(DcMotor.class, "front_left");
+        front_right  = hardwareMap.get(DcMotor.class, "front_right");
+        back_left    = hardwareMap.get(DcMotor.class, "back_left");
+        back_right   = hardwareMap.get(DcMotor.class, "back_right");
+        initVuforia();
+        initTfod();
+        if (tfod != null) {
+            tfod.activate();
 
-        // The TensorFlow software will scale the input images from the camera to a lower resolution.
-        // This can result in lower detection accuracy at longer distances (> 55cm or 22").
-        // If your target is at distance greater than 50 cm (20") you can increase the magnification value
-        // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
-        // should be set to the value of the images used to create the TensorFlow Object Detection model
-        // (typically 16/9).
-        // tfod.setZoom(1.4, 16.0/9.0);
-          /*  tfod.setZoom(1.5, 16.0/9.0);
-        }*/
+            // The TensorFlow software will scale the input images from the camera to a lower resolution.
+            // This can result in lower detection accuracy at longer distances (> 55cm or 22").
+            // If your target is at distance greater than 50 cm (20") you can increase the magnification value
+            // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
+            // should be set to the value of the images used to create the TensorFlow Object Detection model
+            // (typically 16/9).
+            tfod.setZoom(1.4, 16.0/9.0);
+        }
+
 
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
@@ -263,7 +221,8 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
         telemetry.update();
 
         // make sure the imu gyro is calibrated before continuing.
-        while (!imu.isGyroCalibrated()) {
+        while (!imu.isGyroCalibrated())
+        {
             try {
                 sleep(50);
                 throw new InterruptedException("Exception:Checking if gyro is calibrated.");
@@ -277,143 +236,115 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
         telemetry.addData("imu calib status", imu.getCalibrationStatus().toString());
         telemetry.update();
         // Send telemetry message to indicate successful Encoder reset
-        telemetry.addData("Starting at", "%7d :%7d:%7d:%7d",
+        telemetry.addData("Starting at",  "%7d :%7d:%7d:%7d",
                 front_left.getCurrentPosition(),
                 front_right.getCurrentPosition(),
                 back_left.getCurrentPosition(),
                 back_right.getCurrentPosition());
         telemetry.update();
 
-        // Wait for the game to start
-        runtimeDetect.reset();
-        while (runtimeDetect.seconds()<=5)
-        {
-;
-    }
+        // Wait for the game to start (driver presses PLAY)
         waitForStart();
-            runtimeObject.reset();
-            while (opModeIsActive()) {
-                ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
+        runtimeObject.reset();
+        while (opModeIsActive()) {
+            while(runtimeObject.seconds()<=5) {
+                if (tfod != null) {
+                    // getUpdatedRecognitions() will return null if no new information is available since
+                    // the last time that call was made.
+                    List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+                    if (updatedRecognitions != null) {
+                        telemetry.addData("# Objects Detected", updatedRecognitions.size());
 
-                if (currentDetections.size() != 0) {
-                    boolean tagFound = false;
+                        // step through the list of recognitions and display image position/size information for each one
+                        // Note: "Image number" refers to the randomized image orientation/number
+                        for (Recognition recognition : updatedRecognitions) {
+                            if (recognition.getLabel().equals("1 Bolt")) {
+                                telemetry.addData("Actual ObjectDetected", "Bolt ");
+                                parkingobject = 1;
+                                telemetry.update();
+                                telemetry.update();
+                            } else if (recognition.getLabel().equals("2 Bulb")) {
+                                telemetry.addData("Actual ObjectDetected", "Bulb ");
+                                parkingobject = 2;
+                                telemetry.update();
+                            } else if (recognition.getLabel().equals("3 Panel")) {
+                                telemetry.addData("Actual ObjectDetected", "Panel");
+                                parkingobject = 3;
+                                telemetry.update();
+                            }
+                            double col = (recognition.getLeft() + recognition.getRight()) / 2;
+                            double row = (recognition.getTop() + recognition.getBottom()) / 2;
+                            double width = Math.abs(recognition.getRight() - recognition.getLeft());
+                            double height = Math.abs(recognition.getTop() - recognition.getBottom());
 
-                    for (AprilTagDetection tag : currentDetections) {
-                        if (tag.id == LEFT || tag.id == MIDDLE || tag.id == RIGHT) {
-                            tagOfInterest = tag;
-                            tagFound = true;
-                            break;
+                            telemetry.addData("", " ");
+                            telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100);
+                            telemetry.addData("- Position (Row/Col)", "%.0f / %.0f", row, col);
+                            telemetry.addData("- Size (Width/Height)", "%.0f / %.0f", width, height);
                         }
+                        telemetry.update();
                     }
-
-                    if (tagFound) {
-                        telemetry.addLine("Tag of interest is in sight!\n\nLocation data:");
-                        tagToTelemetry(tagOfInterest);
-                    } else {
-                        telemetry.addLine("Don't see tag of interest :(");
-
-                        if (tagOfInterest == null) {
-                            telemetry.addLine("(The tag has never been seen)");
-                        } else {
-                            telemetry.addLine("\nBut we HAVE seen the tag before; last seen at:");
-                            tagToTelemetry(tagOfInterest);
-                        }
-                    }
-
-                } else {
-                    telemetry.addLine("Don't see tag of interest :(");
-
-                    if (tagOfInterest == null) {
-                        telemetry.addLine("(The tag has never been seen)");
-                    } else {
-                        telemetry.addLine("\nBut we HAVE seen the tag before; last seen at:");
-                        tagToTelemetry(tagOfInterest);
-                    }
-
                 }
+            }
 
-                telemetry.update();
-                if (tagOfInterest != null) {
-                    telemetry.addLine("Tag snapshot:\n");
-                    tagToTelemetry(tagOfInterest);
-                    telemetry.update();
-                } else {
-                    telemetry.addLine("No tag snapshot available, it was never sighted during the init loop :(");
-                    telemetry.update();
-                }
+            // Set 1st target in
+            if (initial_target == false) {
+                telemetry.addData("Set Target on highest target", "Sucess");
+                encoderDrive(DRIVE_SPEED, 22, 22, 5.0);
+              //  encoderDrive(TURN_SPEED, 15, -15, 4.0);
+              //  encoderDrive(DRIVE_SPEED, 24, 24, 5.0);
+                initial_target=true;
+            }
 
-                /* Actually do something useful */
-                if (tagOfInterest == null) {
-                    /*
-                     * Insert your autonomous code here, presumably running some default configuration
-                     * since the tag was never sighted during INIT
-                     */
-                } else {
-                    /*
-                     * Insert your autonomous code here, probably using the tag pose to decide your configuration.
-                     */
-
-                    // e.g.
-                    if (tagOfInterest.id == LEFT) {
+                /*
+                if (parkingobject ==1) {
                         telemetry.addData("parkingobject", "1");
-                        parkingobject = 1;
-                    } else if (tagOfInterest.id == MIDDLE) {
-                        telemetry.addData("parkingobject", "2");
-                        parkingobject = 2;
-                    } else if (tagOfInterest.id == RIGHT) {
-                        telemetry.addData("parkingobject", "3");
-                        parkingobject = 3;
-                        // do something else
+                        encoderDrive(DRIVE_SPEED,  27,  27, 5.0);
+                        encoderDrive(TURN_SPEED,   -19, 19, 4.0);  // S2: Turn Right 12 Inches with 4 Sec timeout
+                        encoderDrive(DRIVE_SPEED,  24,  24, 5.0);
+                        break;
                     }
-                }
+                    else if (parkingobject ==2) {
+                        telemetry.addData("parkingobject", "2");
+                        encoderDrive(DRIVE_SPEED,  27,  27, 5.0);
+                        break;
+                    }
+                    else if  (parkingobject ==3) {
+                        telemetry.addData("parkingobject", "3");
+                        encoderDrive(DRIVE_SPEED, 27, 27, 5.0);
+                        encoderDrive(TURN_SPEED, 20, -20, 4.0);
+                        encoderDrive(DRIVE_SPEED,  24,  24, 5.0);
+                        break;// S2: Turn Right 12 Inches with 4 Sec timeout
+                        //encoderDrive(DRIVE_SPEED, 27, 24, 5.0);
 
-                if (parkingobject == 1) {
-                    telemetry.addData("parkingobject", "1");
-                    encoderDrive(DRIVE_SPEED, 27, 27, 5.0);
-                    encoderDrive(TURN_SPEED, -19, 19, 4.0);  // S2: Turn Right 12 Inches with 4 Sec timeout
-                    encoderDrive(DRIVE_SPEED, 24, 24, 5.0);
-                    break;
-                } else if (parkingobject == 2) {
-                    telemetry.addData("parkingobject", "2");
-                    encoderDrive(DRIVE_SPEED, 27, 27, 5.0);
-                    break;
-                } else if (parkingobject == 3) {
-                    telemetry.addData("parkingobject", "3");
-                    encoderDrive(DRIVE_SPEED, 27, 27, 5.0);
-                    encoderDrive(TURN_SPEED, 20, -20, 4.0);
-                    encoderDrive(DRIVE_SPEED, 24, 24, 5.0);
-                    break;// S2: Turn Right 12 Inches with 4 Sec timeout
-                    //encoderDrive(DRIVE_SPEED, 27, 24, 5.0);
-
-                }
-                telemetry.update();
-
-                // Step through each leg of the path,
-
-
-                // }
-
-
-                // Note: Reverse movement is obtained by setting a negative distance (not speed)
-                //encoderDrive(DRIVE_SPEED,  48,  48, 5.0);  // S1: Forward 47 Inches with 5 Sec timeout
-                //encoderDrive(DRIVE_SPEED,  -40,  -48, 5.0);  // S1: Forward 47 Inches with 5 Sec timeout
-
-                //encoderDrive(TURN_SPEED,   18, -18, 4.0);  // S2: Turn Right 12 Inches with 4 Sec timeout
-            }    //encoderDrive(DRIVE_SPEED, -24, -24, 4.0);  // S3: Reverse 24 Inches with 4 Sec timeout
-                double botHeading = -getAngle();
-                String filename = "SavedHeadings.json";
-                String headingData = "Heading=" + botHeading;
-                File file = AppUtil.getInstance().getSettingsFile(filename);
-                ReadWriteFile.writeFile(file, headingData);
-                String readData = ReadWriteFile.readFile(file);
-                double readbotHeading = 0;
-                readbotHeading = Double.parseDouble(readData.substring(8));
-                sleep(1000);  // pause to display final telemetry message.
-                telemetry.addData("HeadingReadfromFile is", "%.3f", readbotHeading);
-
-
-            //telemetry.addData("savedfile", t);
+                    }*/
             telemetry.update();
+            // Step through each leg of the path,
+
+
+        }
+
+
+        // Note: Reverse movement is obtained by setting a negative distance (not speed)
+        //encoderDrive(DRIVE_SPEED,  48,  48, 5.0);  // S1: Forward 47 Inches with 5 Sec timeout
+        //encoderDrive(DRIVE_SPEED,  -40,  -48, 5.0);  // S1: Forward 47 Inches with 5 Sec timeout
+
+        //encoderDrive(TURN_SPEED,   18, -18, 4.0);  // S2: Turn Right 12 Inches with 4 Sec timeout
+        //encoderDrive(DRIVE_SPEED, -24, -24, 4.0);  // S3: Reverse 24 Inches with 4 Sec timeout
+        double botHeading = -getAngle();
+        String filename = "SavedHeadings.json";
+        String headingData = "Heading=" + botHeading;
+        File file = AppUtil.getInstance().getSettingsFile(filename);
+        ReadWriteFile.writeFile(file, headingData);
+        String readData = ReadWriteFile.readFile(file);
+        double readbotHeading = 0;
+        readbotHeading = Double.parseDouble(readData.substring(8));
+        sleep(1000);  // pause to display final telemetry message.
+        telemetry.addData("HeadingReadfromFile is", "%.3f", readbotHeading);
+
+
+        //telemetry.addData("savedfile", t);
+        telemetry.update();
 
     }
 
@@ -470,16 +401,16 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
             // However, if you require that BOTH motors have finished their moves before the robot continues
             // onto the next step, use (isBusy() || isBusy()) in the loop test.
             while (opModeIsActive() &&
-                   (runtime.seconds() < timeoutS) &&
-                   (front_left.isBusy() && back_left.isBusy()
-                    && front_right.isBusy() && back_right.isBusy())) {
+                    (runtime.seconds() < timeoutS) &&
+                    (front_left.isBusy() && back_left.isBusy()
+                            && front_right.isBusy() && back_right.isBusy())) {
 
                 // Display it for the driver.
                 telemetry.addData("Running to",  " %7d :%7d", newfront_LeftTarget,
                         newback_LeftTarget, newfront_RightTarget, newback_RightTarget);
                 telemetry.addData("Currently at",  " at %7d :%7d",
-                                            front_left.getCurrentPosition(), back_left.getCurrentPosition(),
-                                            front_right.getCurrentPosition(), back_right.getCurrentPosition());
+                        front_left.getCurrentPosition(), back_left.getCurrentPosition(),
+                        front_right.getCurrentPosition(), back_right.getCurrentPosition());
                 telemetry.update();
             }
 
@@ -538,19 +469,19 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
         /*
          * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
          */
-     //   VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
-       // parameters.vuforiaLicenseKey = VUFORIA_KEY;
-        //parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
 
         //  Instantiate the Vuforia engine
-        //vuforia = ClassFactory.getInstance().createVuforia(parameters);
+        vuforia = ClassFactory.getInstance().createVuforia(parameters);
     }
 
     /**
      * Initialize the TensorFlow Object Detection engine.
      */
-    /*private void initTfod() {
+    private void initTfod() {
         int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
                 "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
@@ -563,15 +494,5 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
         // Use loadModelFromFile() if you have downloaded a custom team model to the Robot Controller's FLASH.
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABELS);
         // tfod.loadModelFromFile(TFOD_MODEL_FILE, LABELS);
-    }*/
-    void tagToTelemetry(AprilTagDetection detection)
-    {
-        telemetry.addLine(String.format("\nDetected tag ID=%d", detection.id));
-        telemetry.addLine(String.format("Translation X: %.2f feet", detection.pose.x*FEET_PER_METER));
-        telemetry.addLine(String.format("Translation Y: %.2f feet", detection.pose.y*FEET_PER_METER));
-        telemetry.addLine(String.format("Translation Z: %.2f feet", detection.pose.z*FEET_PER_METER));
-        telemetry.addLine(String.format("Rotation Yaw: %.2f degrees", Math.toDegrees(detection.pose.yaw)));
-        telemetry.addLine(String.format("Rotation Pitch: %.2f degrees", Math.toDegrees(detection.pose.pitch)));
-        telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
     }
 }
