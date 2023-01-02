@@ -140,11 +140,11 @@ public class ConceptTelemetry extends LinearOpMode  {
 
             // Show joystick information as some other illustrative data
             telemetry.addLine("left joystick | ")
-                    .addData("x", gamepad1.left_stick_x)
-                    .addData("y", gamepad1.left_stick_y);
+                    .addData("x", gamepad2.left_stick_x)
+                    .addData("y", gamepad2.left_stick_y);
             telemetry.addLine("right joystick | ")
-                    .addData("x", gamepad1.right_stick_x)
-                    .addData("y", gamepad1.right_stick_y);
+                    .addData("x", gamepad2.right_stick_x)
+                    .addData("y", gamepad2.right_stick_y);
 
             /**
              * Transmit the telemetry to the driver station, subject to throttling.

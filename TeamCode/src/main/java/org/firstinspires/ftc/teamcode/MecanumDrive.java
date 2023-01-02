@@ -71,7 +71,7 @@ public class MecanumDrive extends OpMode {
     private double mf2= 0.5;
     private double mf3= 0.8;
 
-    private double power=0.3;
+    private double power=0.5;
     static final double     DRIVE_SPEED             = 0.6;
     static final double     COUNTS_PER_INCH =100;
     private ElapsedTime runtime = new ElapsedTime();
@@ -128,11 +128,11 @@ public class MecanumDrive extends OpMode {
         // Mecanum drive is controlled with three axes: drive (front-and-back),
         // strafe (left-and-right), and twist (rotating the whole chassis).
         // 3 variables to smoothen gamepad input
-        if (gamepad1.left_trigger > 0.9) {
+        /*if (gamepad1.left_trigger > 0.9) {
             power = 0.2;
         } else if (gamepad1.left_trigger > 0.9) {
             power = 0.3;
-        }/*
+        }*//*
         if (abs(gamepad1.left_stick_y)<0.05)
         {
             drive_input = 0;
@@ -167,9 +167,9 @@ public class MecanumDrive extends OpMode {
             drive_input = 1;
         }*/
 
-        double drive = -1 * (Math.pow(gamepad1.left_stick_y, 3));
-        double strafe = Math.pow(gamepad1.left_stick_x, 3);
-        double twist = Math.pow(gamepad1.right_stick_x, 3);
+        double drive = -1 * (Math.pow(gamepad2.left_stick_y, 3));
+        double strafe = Math.pow(gamepad2.left_stick_x, 3);
+        double twist = Math.pow(gamepad2.right_stick_x, 3);
         // Read inverse IMU heading, as the IMU heading is CW positive
 
         double botHeading = -getAngle() + readbotHeading;
@@ -277,10 +277,10 @@ public class MecanumDrive extends OpMode {
         //if (motor_lift.getController().getMotorCurrentPosition(liftpos) < UPPER_LIMIT) {
             if (motor_lift_button_up && !motor_lift_button_down) {
                 telemetry.addData("inside liftup%f", liftpos);
-                motor_lift.setPower(0.55);
+                motor_lift.setPower(0.60);
             }
             if (motor_lift_button_down && !motor_lift_button_up) {
-                motor_lift.setPower(-0.30);
+                motor_lift.setPower(-0.40);
                 telemetry.addData("liftup", "down");
             } else if (!motor_lift_button_down && !motor_lift_button_up) {
                 motor_lift.setPower(0.05);

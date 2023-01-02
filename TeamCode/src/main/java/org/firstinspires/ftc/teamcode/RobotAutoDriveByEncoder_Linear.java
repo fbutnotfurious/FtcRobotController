@@ -381,7 +381,7 @@ public class RobotAutoDriveByEncoder_Linear extends LinearOpMode {
                     telemetry.addData("parkingobject", "3");
                     encoderDrive(DRIVE_SPEED, 27, 27, 5.0);
                     encoderDrive(TURN_SPEED, 20, -20, 4.0);
-                    encoderDrive(DRIVE_SPEED, 24, 24, 5.0);
+                    encoderDrive(DRIVE_SPEED, 22, 22, 5.0);
                     break;// S2: Turn Right 12 Inches with 4 Sec timeout
                     //encoderDrive(DRIVE_SPEED, 27, 24, 5.0);
 

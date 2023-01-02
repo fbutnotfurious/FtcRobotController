@@ -17,7 +17,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  *
  *   Moral:  You should use this sample to experiment with your specific gamepads to explore their rumble features.
  *
- * The rumble motors are accessed through the standard gamepad1 and gamepad2 objects.
+ * The rumble motors are accessed through the standard gamepad2 and gamepad2 objects.
  *   Several new methods were added to the Gamepad class in FTC SDK Rev 7
  *   The key methods are as follows:
  *
@@ -123,18 +123,18 @@ public class ConceptGamepadRumble extends LinearOpMode
         while (opModeIsActive())
         {
             // Read and save the current gamepad button states.
-            boolean currentA = gamepad1.a ;
-            boolean currentLB = gamepad1.left_bumper ;
+            boolean currentA = gamepad2.a ;
+            boolean currentLB = gamepad2.left_bumper ;
 
             // Display the current Rumble status.  Just for interest.
-            telemetry.addData(">", "Are we RUMBLING? %s\n", gamepad1.isRumbling() ? "YES" : "no" );
+            telemetry.addData(">", "Are we RUMBLING? %s\n", gamepad2.isRumbling() ? "YES" : "no" );
 
             // ----------------------------------------------------------------------------------------
             // Example 1. b) Watch the runtime timer, and run the custom rumble when we hit half-time.
             //               Make sure we only signal once by setting "secondHalf" flag to prevent further rumbles.
             // ----------------------------------------------------------------------------------------
             if ((runtime.seconds() > HALF_TIME) && !secondHalf)  {
-                gamepad1.runRumbleEffect(customRumbleEffect);
+                gamepad2.runRumbleEffect(customRumbleEffect);
                 secondHalf =true;
             }
 
@@ -150,15 +150,15 @@ public class ConceptGamepadRumble extends LinearOpMode
             // ----------------------------------------------------------------------------------------
             if (currentLB) {
                 // Left Bumper is being pressed, so send left and right "trigger" values to left and right rumble motors.
-                gamepad1.rumble(gamepad1.left_trigger, gamepad1.right_trigger, Gamepad.RUMBLE_DURATION_CONTINUOUS);
+                gamepad2.rumble(gamepad2.left_trigger, gamepad2.right_trigger, Gamepad.RUMBLE_DURATION_CONTINUOUS);
 
                 // Show what is being sent to rumbles
                 telemetry.addData(">", "Squeeze triggers to control rumbles");
-                telemetry.addData("> : Rumble", "Left: %.0f%%   Right: %.0f%%", gamepad1.left_trigger * 100, gamepad1.right_trigger * 100);
+                telemetry.addData("> : Rumble", "Left: %.0f%%   Right: %.0f%%", gamepad2.left_trigger * 100, gamepad2.right_trigger * 100);
             } else {
                 // Make sure rumble is turned off when Left Bumper is released (only one time each press)
                 if (lastLB) {
-                    gamepad1.stopRumble();
+                    gamepad2.stopRumble();
                 }
 
                 //  Prompt for manual rumble action
@@ -174,8 +174,8 @@ public class ConceptGamepadRumble extends LinearOpMode
             // BUT !!!  Skip it altogether if the Gamepad is already rumbling.
             // ----------------------------------------------------------------------------------------
             if (currentA && !lastA) {
-                if (!gamepad1.isRumbling())  // Check for possible overlap of rumbles.
-                    gamepad1.rumbleBlips(3);
+                if (!gamepad2.isRumbling())  // Check for possible overlap of rumbles.
+                    gamepad2.rumbleBlips(3);
             }
             lastA = currentA; // remember the current button state for next time around the loop
 
@@ -183,9 +183,9 @@ public class ConceptGamepadRumble extends LinearOpMode
             // ----------------------------------------------------------------------------------------
             // Example 4. Rumble once when gamepad right trigger goes above the THRESHOLD.
             // ----------------------------------------------------------------------------------------
-            if (gamepad1.right_trigger > TRIGGER_THRESHOLD) {
+            if (gamepad2.right_trigger > TRIGGER_THRESHOLD) {
                 if (!highLevel) {
-                    gamepad1.rumble(0.9, 0, 200);  // 200 mSec burst on left motor.
+                    gamepad2.rumble(0.9, 0, 200);  // 200 mSec burst on left motor.
                     highLevel = true;  // Hold off any more triggers
                 }
             } else {

@@ -12,7 +12,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
  * The Sony PS4 gamepad can detect two distinct touches on the central touchpad.
  * Other gamepads with different touchpads may provide mixed results.
  *
- * The touchpads are accessed through the standard gamepad1 and gamepad2 objects.
+ * The touchpads are accessed through the standard gamepad2 and gamepad2 objects.
  *   Several new members were added to the Gamepad class in FTC SDK Rev 7
  *
  *   .touchpad_finger_1     returns true if at least one finger is detected.
@@ -53,17 +53,17 @@ public class ConceptGamepadTouchpad extends LinearOpMode
             boolean finger = false;
 
             // Display finger 1 x & y position if finger detected
-            if(gamepad1.touchpad_finger_1)
+            if(gamepad2.touchpad_finger_1)
             {
                 finger = true;
-                telemetry.addLine(String.format("Finger 1: x=%5.2f y=%5.2f\n", gamepad1.touchpad_finger_1_x, gamepad1.touchpad_finger_1_y));
+                telemetry.addLine(String.format("Finger 1: x=%5.2f y=%5.2f\n", gamepad2.touchpad_finger_1_x, gamepad2.touchpad_finger_1_y));
             }
 
             // Display finger 2 x & y position if finger detected
-            if(gamepad1.touchpad_finger_2)
+            if(gamepad2.touchpad_finger_2)
             {
                 finger = true;
-                telemetry.addLine(String.format("Finger 2: x=%5.2f y=%5.2f\n", gamepad1.touchpad_finger_2_x, gamepad1.touchpad_finger_2_y));
+                telemetry.addLine(String.format("Finger 2: x=%5.2f y=%5.2f\n", gamepad2.touchpad_finger_2_x, gamepad2.touchpad_finger_2_y));
             }
 
             if(!finger)
