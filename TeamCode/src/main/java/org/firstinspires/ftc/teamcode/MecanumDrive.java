@@ -168,7 +168,7 @@ public class MecanumDrive extends OpMode {
         }*/
 
         double drive = -1 * (Math.pow(gamepad2.left_stick_y, 3));
-        double strafe = Math.pow(gamepad2.left_stick_x, 3);
+        double strafe = 2*Math.pow(gamepad2.left_stick_x, 3);
         double twist = Math.pow(gamepad2.right_stick_x, 3);
         // Read inverse IMU heading, as the IMU heading is CW positive
 
@@ -238,7 +238,7 @@ public class MecanumDrive extends OpMode {
             x_debounce_counter += 1;
 
             if (x_debounce_counter >= debouncer_threshold) {
-                gripper = 0.05;
+                gripper = 0;//0.05
                 //gripperAsServo.getController().pwmEnable();
                 telemetry.addData("Setting gripper position %f", gripper);
                 if (gripperAsServo.getPosition() != gripper) {
@@ -251,7 +251,7 @@ public class MecanumDrive extends OpMode {
         if (gamepad1.b) {
             b_debounce_counter += 1;
             if (b_debounce_counter >= debouncer_threshold) {
-                gripper = 0.23; // extra 0.20
+                gripper = 0.13; // backup 0.07,old1 0.13,old2 0.23
                 //gripperAsServo.getController().pwmEnable();
                 telemetry.addData("Setting gripper position %f", gripper);
                 if (gripperAsServo.getPosition() != gripper) {
